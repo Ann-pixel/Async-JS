@@ -61,7 +61,7 @@ function renderCountry(data, className = "") {
           </div>
         </article>`;
   countriesContainer.insertAdjacentHTML("beforeend", html);
-  // countriesContainer.style.opacity = "1";
+  countriesContainer.style.opacity = "1";
 }
 function renderError(msg) {
   countriesContainer.insertAdjacentText("beforeend", msg);
@@ -116,16 +116,56 @@ function renderError(msg) {
 // }
 // getCountry("canada");
 
+// function getCountry(country) {
+//   fetch(`https://restcountries.eu/rest/v2/name/${country}?fullText=true`)
+//     .then((response) => {
+//       console.log(response);
+//       if (!response.ok)
+//         throw new Error(`${response.status}: country not found!`);
+//       return response.json();
+//     })
+//     .then((data) => {
+//       renderCountry(data[0]);
+//       const neighbor = data[0].borders[0];
+//       if (!neighbor) return;
+//       return fetch(`https://restcountries.eu/rest/v2/alpha/${neighbor}`);
+//     })
+//     .then((response) => response.json())
+//     .then((neighData) => renderCountry(neighData, "neighbour"))
+//     .catch((err) => {
+//       console.error(`${err}🎃`);
+//       return renderError(`Something went wrong.. ${err.message}`);
+//     })
+//     .finally(() => {
+//       countriesContainer.style.opacity = 1;
+//     });
+// }
+
+// btn.addEventListener("click", function () {
+//   getCountry("germany");
+// });
+// // getCountry("gadlkfjn");
+
+function getJSON(url, errMsg = "Something went wrong!") {
+  return fetch(url).then((response) => {
+    if (!response.ok) throw new Error(`${response.status}: ${errMsg}`);
+    return response.json();
+  });
+}
 function getCountry(country) {
-  fetch(`https://restcountries.eu/rest/v2/name/${country}?fullText=true`)
-    .then((response) => response.json())
+  getJSON(
+    `https://restcountries.eu/rest/v2/name/${country}?fullText=true`,
+    "Country not found!"
+  )
     .then((data) => {
       renderCountry(data[0]);
       const neighbor = data[0].borders[0];
-      if (!neighbor) return;
-      return fetch(`https://restcountries.eu/rest/v2/alpha/${neighbor}`);
+      if (!neighbor) throw new Error("No neighbor found! 🏝");
+      return getJSON(
+        `https://restcountries.eu/rest/v2/alpha/${neighbor}`,
+        "Country not found!"
+      );
     })
-    .then((response) => response.json())
     .then((neighData) => renderCountry(neighData, "neighbour"))
     .catch((err) => {
       console.error(`${err}🎃`);
@@ -136,6 +176,34 @@ function getCountry(country) {
     });
 }
 
+// btn.addEventListener("click", function () {
+//   getCountry("australia");
+// });
+// getCountry("gadlkfjn");
+
 btn.addEventListener("click", function () {
-  getCountry("portugal");
+  whereAmI(52.508, 13.381);
 });
+
+function whereAmI(lat, lang) {
+  fetch(`https://geocode.xyz/${lat},${lang}?geoit=json`)
+    .then((response) => {
+      if (!response.ok) {
+        console.log(response);
+        throw new Error("Error from geocode 🎆");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log(`You are in ${data.city}, ${data.country}`);
+      return fetch(
+        `https://restcountries.eu/rest/v2/name/${data.country}?fullText=true`
+      )
+        .then((response) => {
+          if (!response.ok) throw new Error("Error from restCountries! 🎆");
+          return response.json();
+        })
+        .then((data) => renderCountry(data[0]));
+    })
+    .catch((err) => console.log(err));
+}
